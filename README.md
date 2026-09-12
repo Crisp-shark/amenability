@@ -6,10 +6,10 @@
 
 ## 交互图
 
-- [集合平移与对称差](docs/index.html)：分别调节集合点数 N 和向右移动的格数 m。
-- [平均中的抵消](docs/average.html)：调节区间长度，观察中间项抵消及端点权重。
+- [打开集合平移与对称差交互图](https://crisp-shark.github.io/amenability/)：分别调节集合点数 N 和向右移动的格数 m。
+- [打开平均中的抵消交互图](https://crisp-shark.github.io/amenability/average.html)：调节区间长度，观察中间项抵消及端点权重。
 
-上面的仓库文件链接用于查看或下载页面。在 GitHub 的文件预览中不能操作滑块；下载后在浏览器中打开，或通过 GitHub Pages 打开，才能互动。
+上面的链接打开 GitHub Pages 网页，可以直接操作滑块。页面文件也保存在 [docs 文件夹](docs/) 中；若通过 GitHub 文件预览查看 HTML，需下载后在浏览器中打开才能互动。
 
 建议先保持 m = 1，增大 N；然后分别固定 m = 2、m = 3，再增大 N。观察两端的变化点数与相对比例。
 
@@ -179,15 +179,12 @@ $$
 
 文章还讨论有限群、整数群、自由群 F₂，以及通过群扩张等方式构造更多可和群。我们目前只详细理解了整数上的例子，其他例子与证明留待后续学习。
 
-## 放到 GitHub 并开启交互页面
+## 页面维护
 
-1. 把这份 README 和 docs 文件夹上传到你的仓库。
-2. 在仓库中打开 Settings → Pages。
-3. 在 Build and deployment 中选择 Deploy from a branch。
-4. 选择存放文件的分支（通常是 main），文件夹选择 /docs，然后保存。
-5. 发布完成后，用该设置页显示的网站链接打开交互图；在网站链接末尾加上 average.html 可打开平均抵消图。
+本仓库使用 GitHub Pages，发布来源是 main 分支中的 /docs 文件夹。更新 docs/index.html 或 docs/average.html 并提交到 main 后，GitHub 会重新发布页面。
+
+发布来源可在仓库 Settings → Pages → Build and deployment 中查看。若将这些文件放到其他仓库，需要在那里重新配置 Pages，并更新本笔记里的网页链接。
 
 GitHub Pages 用仓库中的 HTML、CSS 和 JavaScript 发布静态网页。配置方法参见 [GitHub 官方说明](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)。实际仓库中若已有 Pages 配置，应沿用并调整已有结构。
 
 不启用 Pages 也能使用：下载 docs/index.html 或 docs/average.html 后，在现代浏览器中直接打开即可。
-
