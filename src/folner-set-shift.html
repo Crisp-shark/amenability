@@ -1,0 +1,72 @@
+<div id="folner-set-shift">
+  <div class="viz-controls">
+    <label class="form-label" for="folner-size">集合点数 N：<span id="folner-n" class="tabular-nums">6</span>
+      <input class="form-range" id="folner-size" type="range" min="1" max="40" value="6">
+    </label>
+    <label class="form-label" for="folner-shift">向右移动 m：<span id="folner-m" class="tabular-nums">1</span> 格
+      <input class="form-range" id="folner-shift" type="range" min="0" max="40" value="1">
+    </label>
+  </div>
+  <div id="folner-picture"></div>
+  <div class="viz-row text-small">
+    <span><span class="folner-key" style="background:var(--viz-series-1)"></span>原集合独有</span>
+    <span><span class="folner-key" style="background:var(--muted-foreground);opacity:.4"></span>两者共有</span>
+    <span><span class="folner-key" style="background:var(--viz-series-2)"></span>移动后独有</span>
+  </div>
+  <div id="folner-ratio" class="viz-row tabular-nums" aria-live="polite"></div>
+</div>
+<style>
+  #folner-set-shift #folner-picture {width:100%;margin:12px 0;}
+  #folner-set-shift .folner-key {display:inline-block;width:10px;height:10px;margin-right:5px;}
+  #folner-set-shift #folner-ratio {margin-top:16px;}
+  #folner-set-shift .folner-svg {display:block;width:100%;}
+  #folner-set-shift .folner-svg text {fill:var(--foreground);font-size:12px;font-weight:400;}
+</style>
+<script>
+(() => {
+  const root=document.getElementById('folner-set-shift');
+  const size=root.querySelector('#folner-size'),shift=root.querySelector('#folner-shift');
+  const holder=root.querySelector('#folner-picture');
+  const ns='http://www.w3.org/2000/svg';
+  function draw(){
+    const n=Number(size.value),m=Number(shift.value),count=n+m;
+    root.querySelector('#folner-n').textContent=n;
+    root.querySelector('#folner-m').textContent=m;
+    const w=holder.getBoundingClientRect().width||640,h=282;
+    const left=24,right=w-24,step=count>1?(right-left)/(count-1):0,px=k=>count>1?left+(k-1)*step:w/2;
+    const radius=Math.max(1,Math.min(12,(step||40)*.31));
+    const difference=2*Math.min(n,m),shared=Math.max(0,n-m);
+    const svg=document.createElementNS(ns,'svg');
+    svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+    svg.setAttribute('class','folner-svg');
+    svg.setAttribute('role','img');
+    svg.setAttribute('aria-label',`原集合是1到${n}，向右移动${m}格后是${m+1}到${n+m}。共同部分有${shared}个点，对称差共${difference}个点。变化点数除以原集合点数为${difference}/${n}。`);
+    function el(tag,attrs,text){const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(text)e.textContent=text;svg.append(e);return e;}
+    el('text',{x:8,y:18},`原集合 A：{1, …, ${n}}（${n} 个点）`);
+    el('text',{x:8,y:109},`移动后的 A + ${m}：{${m+1}, …, ${n+m}}（${n} 个点）`);
+    el('text',{x:8,y:200},`对称差 △：两集合独有的点（${difference} 个）`);
+    const rows=[{y:48,lo:1,hi:n},{y:139,lo:m+1,hi:n+m},{y:230,lo:1,hi:n+m,difference:true}];
+    rows.forEach(row=>{
+      el('line',{x1:left,y1:row.y,x2:right,y2:row.y,stroke:'var(--border)','stroke-width':1});
+      for(let k=row.lo;k<=row.hi;k++){
+        const inOriginal=k>=1&&k<=n,inShifted=k>=m+1&&k<=m+n;
+        if(!inOriginal&&!inShifted)continue;
+        const common=inOriginal&&inShifted;
+        if(row.difference&&common)continue;
+        const color=common?'var(--muted-foreground)':inOriginal?'var(--viz-series-1)':'var(--viz-series-2)';
+        el('circle',{cx:px(k),cy:row.y,r:radius,fill:color,opacity:common?.4:1});
+        if(step>=25||k===row.lo||k===row.hi){
+          el('text',{x:px(k),y:row.y+28,'text-anchor':'middle'},String(k));
+        }
+      }
+    });
+    if(difference===0)el('text',{x:w/2,y:258,'text-anchor':'middle'},'空集：没有变化点');
+    holder.replaceChildren(svg);
+    root.querySelector('#folner-ratio').textContent=`变化比例：${difference} 个变化点 ÷ ${n} 个原集合点 = ${(difference/n).toFixed(3)}`;
+  }
+  size.addEventListener('input',draw);
+  shift.addEventListener('input',draw);
+  new ResizeObserver(draw).observe(holder);
+  draw();
+})();
+</script>
