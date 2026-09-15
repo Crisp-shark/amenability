@@ -1,0 +1,125 @@
+<div id="two-player-timing">
+  <h2>两人随机定时与 Følner 区间</h2>
+  <div class="viz-controls">
+    <label class="form-label" for="timing-window">时间窗口 N：<span id="timing-n" class="tabular-nums">8</span>
+      <input id="timing-window" class="form-range" type="range" min="4" max="30" value="8">
+    </label>
+    <label class="form-label" for="observed-time">玩家观察到时刻 t：<span id="timing-t" class="tabular-nums">4</span>
+      <input id="observed-time" class="form-range" type="range" min="1" max="8" value="4">
+    </label>
+  </div>
+  <div id="timing-picture"></div>
+  <div class="viz-row text-small" aria-label="图例">
+    <span><span class="timing-dot timing-first"></span>第一个人的可能时间</span>
+    <span><span class="timing-dot timing-second"></span>第二个人的可能时间</span>
+  </div>
+  <div id="timing-result" class="card" aria-live="polite"></div>
+  <div class="viz-row tabular-nums">
+    <span id="timing-folner"></span>
+    <span id="timing-tv"></span>
+  </div>
+</div>
+<style>
+  #two-player-timing #timing-picture { width: 100%; margin: 12px 0; }
+  #two-player-timing .timing-svg { display: block; width: 100%; }
+  #two-player-timing .timing-svg text { fill: var(--foreground); font-size: 12px; font-weight: 400; }
+  #two-player-timing .timing-dot { display: inline-block; width: 10px; height: 10px; margin-right: 5px; }
+  #two-player-timing .timing-first { background: var(--viz-series-1); border-radius: 50%; }
+  #two-player-timing .timing-second { background: var(--viz-series-2); }
+  #two-player-timing #timing-result { margin: 16px 0; }
+</style>
+<script>
+(() => {
+  const root = document.getElementById('two-player-timing');
+  const nInput = root.querySelector('#timing-window');
+  const tInput = root.querySelector('#observed-time');
+  const holder = root.querySelector('#timing-picture');
+  const ns = 'http://www.w3.org/2000/svg';
+
+  function draw() {
+    const n = Number(nInput.value);
+    tInput.max = String(n);
+    if (Number(tInput.value) > n) tInput.value = String(n);
+    const t = Number(tInput.value);
+    root.querySelector('#timing-n').textContent = String(n);
+    root.querySelector('#timing-t').textContent = String(t);
+
+    const w = holder.getBoundingClientRect().width || 640;
+    const h = 250;
+    const left = Math.min(92, Math.max(64, w * 0.18));
+    const right = w - 24;
+    const step = (right - left) / (n - 1);
+    const x = k => left + (k - 1) * step;
+    const r = Math.max(3, Math.min(8, step * 0.24));
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.setAttribute('class', 'timing-svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', `起始时间从1到${n - 1}均匀选择。第一个人的可能时间是1到${n - 1}，第二个人的是2到${n}。当前观察时刻为${t}。`);
+
+    function add(tag, attrs, text) {
+      const element = document.createElementNS(ns, tag);
+      Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
+      if (text !== undefined) element.textContent = text;
+      svg.append(element);
+      return element;
+    }
+
+    add('text', { x: left, y: 18 }, `随机起点 i ∈ {1, …, ${n - 1}}`);
+    if (n > 3) {
+      add('rect', {
+        x: x(2), y: 35, width: x(n - 1) - x(2), height: 139,
+        fill: 'var(--muted-foreground)', opacity: 0.08
+      });
+      add('text', { x: (x(2) + x(n - 1)) / 2, y: 51, 'text-anchor': 'middle' }, `共同时间 2, …, ${n - 1}`);
+    }
+
+    const rows = [
+      { y: 92, lo: 1, hi: n - 1, label: '第一个人', color: 'var(--viz-series-1)', shape: 'circle' },
+      { y: 150, lo: 2, hi: n, label: '第二个人', color: 'var(--viz-series-2)', shape: 'square' }
+    ];
+
+    rows.forEach(row => {
+      add('text', { x: left - 12, y: row.y + 4, 'text-anchor': 'end' }, row.label);
+      add('line', { x1: left, y1: row.y, x2: right, y2: row.y, stroke: 'var(--border)', 'stroke-width': 1 });
+      for (let k = row.lo; k <= row.hi; k++) {
+        const selected = k === t;
+        if (row.shape === 'circle') {
+          add('circle', { cx: x(k), cy: row.y, r: selected ? r + 3 : r, fill: row.color, opacity: selected ? 1 : 0.58 });
+        } else {
+          const size = selected ? 2 * (r + 3) : 2 * r;
+          add('rect', { x: x(k) - size / 2, y: row.y - size / 2, width: size, height: size, fill: row.color, opacity: selected ? 1 : 0.58 });
+        }
+      }
+    });
+
+    add('line', { x1: x(t), y1: 58, x2: x(t), y2: 181, stroke: 'var(--foreground)', 'stroke-width': 1.5 });
+    add('text', { x: x(t), y: 199, 'text-anchor': 'middle' }, `观察到 t = ${t}`);
+
+    const ticks = [...new Set([1, t, n])].sort((a, b) => a - b);
+    add('line', { x1: left, y1: 218, x2: right, y2: 218, stroke: 'var(--border)', 'stroke-width': 1 });
+    ticks.forEach(k => {
+      add('line', { x1: x(k), y1: 214, x2: x(k), y2: 223, stroke: 'var(--foreground)', 'stroke-width': 1 });
+      add('text', { x: x(k), y: 241, 'text-anchor': k === 1 ? 'start' : k === n ? 'end' : 'middle' }, String(k));
+    });
+    holder.replaceChildren(svg);
+
+    let message;
+    if (t === 1) {
+      message = '时刻 1 只可能属于第一个人：时间泄露了“我是第一个”。';
+    } else if (t === n) {
+      message = `时刻 ${n} 只可能属于第二个人：时间泄露了“我是第二个”。`;
+    } else {
+      message = `时刻 ${t} 两人都有可能，而且两种情况概率相同：仅凭时间无法判断次序。`;
+    }
+    root.querySelector('#timing-result').textContent = message;
+    root.querySelector('#timing-folner').textContent = `Følner 对称差比例：2/${n - 1} = ${(2 / (n - 1)).toFixed(3)}`;
+    root.querySelector('#timing-tv').textContent = `全变差距离：1/${n - 1} = ${(1 / (n - 1)).toFixed(3)}`;
+  }
+
+  nInput.addEventListener('input', draw);
+  tInput.addEventListener('input', draw);
+  new ResizeObserver(draw).observe(holder);
+  draw();
+})();
+</script>
